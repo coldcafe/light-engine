@@ -1,0 +1,8 @@
+PROJECT_NAME="psy"
+DEPLOY_ENV="uat"
+APP_NAME="psy-marketing-api"
+IMAGE_TAG=$GIT_COMMIT"-"$BUILD_NUMBER
+SOURCE_CODE_PATH=
+
+#export PATH="/usr/local/node/bin:$PATH"
+node ./scripts $PROJECT_NAME $DEPLOY_ENV $APP_NAME $IMAGE_TAG $SOURCE_CODE_PATH
