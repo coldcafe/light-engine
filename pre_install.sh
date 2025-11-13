@@ -14,3 +14,6 @@ curl -O https://nodejs.org/dist/v22.20.0/node-v22.20.0-linux-x64.tar.xz
 apt install xz-utils
 xz -d node-v22.20.0-linux-x64.tar.xz && tar xf node-v22.20.0-linux-x64.tar
 mv node-v22.20.0-linux-x64 /usr/local/node
+
+# get eks kubeconfig
+aws eks update-kubeconfig --kubeconfig="./k8s_yml/psy/test/kube_conf.yml"  --region us-east-1 --name [cluster-name]

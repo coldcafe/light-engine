@@ -4,15 +4,15 @@ const YAML = require('yaml');
 const { execSync } = require('child_process');
 
 exports.genImagePullSecret = function genImagePullSecret(dirpath, config, appName) {
-  if (config.docker_repository.type == 'default') {
-    genDefaultImagePullSecret(dirpath, config, appName);
+  if (config.docker_repository.type == 'standard') {
+    genStandardImagePullSecret(dirpath, config, appName);
   } else if (config.docker_repository.type == 'aws') {
     genAwsImagePullSecret(dirpath, config, appName);
   }
 }
 
 
-function genDefaultImagePullSecret(dirpath, config, appName) {
+function genStandardImagePullSecret(dirpath, config, appName) {
   const appConfig = config.app[appName];
   const namespace = config.namespace;
   const secretName = appConfig.imagePullSecret;
@@ -27,7 +27,7 @@ function genDefaultImagePullSecret(dirpath, config, appName) {
   if (!username || !password || !url) {
     throw new Error('Invalid docker_repository configure configuration!');
   }
-  execSync(`echo "${password}" | docker login ${url} --username AWS --password-stdin`);
+  execSync(`echo "${password}" | docker login ${url} --username ${username} --password-stdin`);
 
   const dockerConfig = { "auths": {} };
   dockerConfig["auths"][url] = { username, password };
