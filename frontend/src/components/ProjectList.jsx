@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -45,19 +47,19 @@ const ProjectList = () => {
   return (
     <div className="container">
       <div className="header">
-        <h1>项目列表</h1>
-        <p>管理您的CICD配置项目</p>
+        <h1>{t('projectList.title')}</h1>
+        <p>{t('projectList.description')}</p>
         <button className="btn primary" onClick={handleCreateNew}>
-          创建新项目
+          {t('projectList.createNewProject')}
         </button>
       </div>
 
-      {loading && <div className="loading">加载中...</div>}
+      {loading && <div className="loading">{t('common.loading')}...</div>}
       {error && (
         <div className="error">
-          错误: {error}
+          {t('errors.error')}: {error}
           <button className="btn secondary" onClick={fetchProjects}>
-            重试
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -66,22 +68,22 @@ const ProjectList = () => {
         <div className="projects-container">
           {projects.length === 0 ? (
             <div className="no-projects">
-              <p>暂无项目配置</p>
+              <p>{t('projectList.noProjects')}</p>
               <button className="btn primary" onClick={handleCreateNew}>
-                创建第一个项目
+                {t('projectList.createFirstProject')}
               </button>
             </div>
           ) : (
             <table className="projects-table">
               <thead>
                 <tr>
-                  <th>项目名称</th>
-                  <th>环境</th>
-                  <th>K8S命名空间</th>
-                  <th>K8S类型</th>
-                  <th>Docker仓库类型</th>
-                  <th>创建时间</th>
-                  <th>操作</th>
+                  <th>{t('projectList.tableHeaders.projectName')}</th>
+                  <th>{t('projectList.tableHeaders.env')}</th>
+                  <th>{t('projectList.tableHeaders.namespace')}</th>
+                  <th>{t('projectList.tableHeaders.k8sType')}</th>
+                  <th>{t('projectList.tableHeaders.dockerRepoType')}</th>
+                  <th>{t('projectList.tableHeaders.createdAt')}</th>
+                  <th>{t('projectList.tableHeaders.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,11 +93,11 @@ const ProjectList = () => {
                     <td>{project.envName}</td>
                     <td>{project.namespace || '-'}</td>
                     <td>
-                      {project.k8sType === 'aws' ? 'AWS EKS' : '标准K8S'}
+                      {project.k8sType === 'aws' ? t('projectList.k8sTypes.aws') : t('projectList.k8sTypes.standard')}
                     </td>
                     <td>
-                      {project.dockerRepositoryType === 'aws' ? 'AWS ECR' : 
-                       project.dockerRepositoryType === 'standard' ? '标准仓库' : '-'}
+                      {project.dockerRepositoryType === 'aws' ? t('projectList.dockerRepoTypes.aws') : 
+                       project.dockerRepositoryType === 'standard' ? t('projectList.dockerRepoTypes.standard') : '-'}
                     </td>
                     <td>{formatDate(project.createdAt)}</td>
                     <td>
@@ -103,7 +105,7 @@ const ProjectList = () => {
                         className="btn secondary"
                         onClick={() => handleEdit(project.projectName, project.envName)}
                       >
-                        编辑
+                        {t('common.edit')}
                       </button>
                     </td>
                   </tr>

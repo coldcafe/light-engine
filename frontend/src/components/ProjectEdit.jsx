@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const ProjectEdit = () => {
   const { projectName, envName } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [formData, setFormData] = useState({
       namespace: '',
@@ -81,9 +83,9 @@ const ProjectEdit = () => {
             setFormData(newFormData);
           }
         } catch (err) {
-          setError(err.message);
-          console.error('Error loading project:', err);
-        } finally {
+      setError(err.message);
+      console.error(t('errors.loadingProjectFailed'), err);
+    } finally {
           setLoading(false);
         }
       };
@@ -110,30 +112,30 @@ const ProjectEdit = () => {
     const errors = {};
     
     if (!formData.namespace.trim()) {
-      errors.namespace = 'K8S命名空间不能为空';
+      errors.namespace = t('errors.k8sNamespaceRequired');
     }
     
     if (formData.k8sType === 'aws') {
-      if (!formData.awsConfig.region) errors.awsRegion = 'AWS区域不能为空';
-      if (!formData.awsConfig.accessKey) errors.awsAccessKey = 'AWS Access Key不能为空';
+      if (!formData.awsConfig.region) errors.awsRegion = t('errors.awsRegionRequired');
+      if (!formData.awsConfig.accessKey) errors.awsAccessKey = t('errors.awsAccessKeyRequired');
       // 不再强制要求Secret Key，因为我们不显示现有值
       // 只有在提供新值时才验证必填性
       if (formData.awsConfig.secretKey && formData.awsConfig.secretKey.trim() === '') {
-        errors.awsSecretKey = 'AWS Secret Key不能为空';
+        errors.awsSecretKey = t('errors.awsSecretKeyRequired');
       }
-      if (!formData.clusterName) errors.awsClusterName = 'EKS集群名称不能为空';
+      if (!formData.clusterName) errors.awsClusterName = t('errors.awsClusterNameRequired');
     } else if (formData.k8sType === 'standard') {
       // 不再强制要求k8sConf，因为我们不显示现有值
       // 只有在提供新值时才验证必填性
       if (formData.k8sConf && formData.k8sConf.trim() === '') {
-        errors.k8sConf = 'K8S配置不能为空';
+        errors.k8sConf = t('errors.k8sConfigRequired');
       }
     }
     
     if (formData.dockerRepositoryType === 'standard') {
-      if (!formData.dockerRepositoryUrl.trim()) errors.dockerRepositoryUrl = 'Docker仓库URL不能为空';
-      if (!formData.dockerRepositoryUsername.trim()) errors.dockerRepositoryUsername = '用户名不能为空';
-      if (!formData.dockerRepositoryPassword.trim()) errors.dockerRepositoryPassword = '密码不能为空';
+      if (!formData.dockerRepositoryUrl.trim()) errors.dockerRepositoryUrl = t('errors.dockerUrlRequired');
+      if (!formData.dockerRepositoryUsername.trim()) errors.dockerRepositoryUsername = t('errors.usernameRequired');
+      if (!formData.dockerRepositoryPassword.trim()) errors.dockerRepositoryPassword = t('errors.passwordRequired');
     }
     
     return errors;
@@ -144,7 +146,7 @@ const ProjectEdit = () => {
     
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
-      setError('请检查表单填写');
+      setError(t('errors.checkForm'));
       return;
     }
     
@@ -165,7 +167,7 @@ const ProjectEdit = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '更新失败');
+        throw new Error(errorData.error || t('errors.updateFailed'));
       }
       
       setSuccess(true);
@@ -185,81 +187,81 @@ const ProjectEdit = () => {
   };
 
   if (loading) {
-    return <div className="loading">加载项目配置中...</div>;
+    return <div className="loading">{t('projectEdit.loading')}</div>;
   }
 
   return (
     <div className="container">
       <div className="header">
-        <h1>编辑项目配置</h1>
-        <p>修改 {projectName} ({envName}) 的配置</p>
+        <h1>{t('projectEdit.title')}</h1>
+        <p>{t('projectEdit.subtitle', { projectName, envName })}</p>
       </div>
       
       {error && <div className="error">{error}</div>}
-      {success && <div className="success">项目更新成功！正在返回列表...</div>}
+      {success && <div className="success">{t('projectEdit.updateSuccess')}</div>}
       
       <form onSubmit={handleSubmit} className="project-form">
         <div className="form-section">
-          <h2>项目基本信息</h2>
+          <h2>{t('projectForm.basicInfo')}</h2>
           <div className="form-group">
-            <label>项目名称</label>
+            <label>{t('projectForm.projectName')}</label>
             <input type="text" value={projectName} readOnly disabled />
           </div>
           <div className="form-group">
-            <label>环境名称</label>
+            <label>{t('projectForm.envName')}</label>
             <input type="text" value={envName} readOnly disabled />
           </div>
           
         </div>
         
         <div className="form-section">
-          <h2>Kubernetes配置</h2>
+          <h2>{t('projectForm.k8sConfig')}</h2>
           <div className="form-group">
-            <label>K8S命名空间</label>
+            <label>{t('projectForm.k8sNamespace')}</label>
             <input
               type="text"
               name="namespace"
               value={formData.namespace}
               onChange={handleChange}
-              placeholder="输入K8S命名空间"
+              placeholder={t('projectForm.k8sNamespacePlaceholder')}
             />
           </div>
           <div className="form-group">
-            <label>K8S类型</label>
+            <label>{t('projectForm.k8sType')}</label>
             <select
               name="k8sType"
               value={formData.k8sType}
               onChange={handleChange}
               disabled  // 不允许修改k8sType
             >
-              <option value="standard">标准K8S</option>
+              <option value="standard">{t('projectForm.standardK8s')}</option>
               <option value="aws">AWS EKS</option>
             </select>
           </div>
           
           {formData.k8sType === 'standard' && (
             <div className="form-group">
-              <label>K8S配置</label>
+              <label>{t('projectForm.k8sConfigContent')}</label>
               <textarea
                 name="k8sConf"
                 value={formData.k8sConf}
                 onChange={handleChange}
-                placeholder="粘贴新的kubeconfig内容（为空时保持现有配置不变）"
+                placeholder={t('projectForm.k8sConfigPlaceholder')}
                 rows="10"
               />
-              <small className="hint">注意：为了安全起见，现有配置不显示。只在填写新内容时更新。</small>
+              <small className="hint">{t('projectForm.k8sConfigHint')}</small>
             </div>
           )}
           
           {formData.k8sType === 'aws' && (
             <div className="form-group">
-              <label>EKS集群名称</label>
+              <label>{t('projectForm.eksClusterName')}</label>
               <input
                 type="text"
                 value={formData.clusterName}
                 readOnly  // clusterName设为只读，只能在创建时设置
                 disabled
-                placeholder="集群名称在创建时设置"
+                placeholder={t('projectForm.clusterNameHint')}
               />
             </div>
           )}
@@ -268,49 +270,49 @@ const ProjectEdit = () => {
         {/* AWS配置：与Docker仓库配置同级 */}
         {(formData.k8sType === 'aws' || formData.dockerRepositoryType === 'aws') && (
           <div className="form-section">
-            <h2>AWS配置</h2>
+            <h2>{t('projectForm.awsConfig')}</h2>
             <div className="form-group">
-              <label>AWS区域</label>
+              <label>{t('projectForm.awsRegion')}</label>
               <input
                 type="text"
                 value={formData.awsConfig.region}
                 onChange={(e) => handleAwsConfigChange('region', e.target.value)}
-                placeholder="例如: us-west-2"
+                placeholder={t('projectForm.awsRegionPlaceholder')}
               />
             </div>
             <div className="form-group">
-              <label>AWS Access Key</label>
+              <label>{t('projectForm.awsAccessKey')}</label>
               <input
                 type="text"
                 value={formData.awsConfig.accessKey}
                 onChange={(e) => handleAwsConfigChange('accessKey', e.target.value)}
-                placeholder="输入AWS Access Key"
+                placeholder={t('projectForm.awsAccessKeyPlaceholder')}
               />
             </div>
             <div className="form-group">
-              <label>AWS Secret Key</label>
+              <label>{t('projectForm.awsSecretKey')}</label>
               <input
                 type="password"
                 value={formData.awsConfig.secretKey}
                 onChange={(e) => handleAwsConfigChange('secretKey', e.target.value)}
-                placeholder="输入新的AWS Secret Key（为空时保持现有配置不变）"
+                placeholder={t('projectForm.awsSecretKeyPlaceholder')}
               />
-              <small className="hint">注意：为了安全起见，现有Secret Key不显示。只在填写新内容时更新。</small>
+              <small className="hint">{t('projectForm.awsSecretKeyHint')}</small>
             </div>
 
           </div>
         )}
         
         <div className="form-section">
-          <h2>Docker仓库配置</h2>
+          <h2>{t('projectForm.dockerConfig')}</h2>
           <div className="form-group">
-            <label>Docker仓库类型</label>
+            <label>{t('projectForm.dockerRepositoryType')}</label>
             <select
               name="dockerRepositoryType"
               value={formData.dockerRepositoryType}
               onChange={handleChange}
             >
-              <option value="standard">标准仓库</option>
+              <option value="standard">{t('projectForm.standardRepository')}</option>
               <option value="aws">AWS ECR</option>
             </select>
           </div>
@@ -318,33 +320,33 @@ const ProjectEdit = () => {
           {formData.dockerRepositoryType === 'standard' && (
             <>
               <div className="form-group">
-                <label>仓库URL</label>
+                <label>{t('projectForm.dockerUrl')}</label>
                 <input
                   type="text"
                   name="dockerRepositoryUrl"
                   value={formData.dockerRepositoryUrl}
                   onChange={handleChange}
-                  placeholder="例如: registry.example.com"
+                  placeholder={t('projectForm.dockerUrlPlaceholder')}
                 />
               </div>
               <div className="form-group">
-                <label>用户名</label>
+                <label>{t('projectForm.username')}</label>
                 <input
                   type="text"
                   name="dockerRepositoryUsername"
                   value={formData.dockerRepositoryUsername}
                   onChange={handleChange}
-                  placeholder="输入用户名"
+                  placeholder={t('projectForm.usernamePlaceholder')}
                 />
               </div>
               <div className="form-group">
-                <label>密码</label>
+                <label>{t('projectForm.password')}</label>
                 <input
                   type="password"
                   name="dockerRepositoryPassword"
                   value={formData.dockerRepositoryPassword}
                   onChange={handleChange}
-                  placeholder="输入密码"
+                  placeholder={t('projectForm.passwordPlaceholder')}
                 />
               </div>
             </>
@@ -353,11 +355,11 @@ const ProjectEdit = () => {
         
         <div className="form-actions">
           <button type="button" className="btn secondary" onClick={handleCancel}>
-            取消
-          </button>
-          <button type="submit" className="btn primary" disabled={submitting}>
-            {submitting ? '保存中...' : '保存更改'}
-          </button>
+              {t('projectForm.cancel')}
+            </button>
+            <button type="submit" className="btn primary" disabled={submitting}>
+              {submitting ? t('projectForm.saving') : t('projectForm.saveChanges')}
+            </button>
         </div>
       </form>
     </div>
