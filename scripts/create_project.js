@@ -6,7 +6,7 @@ const { execSync } = require('child_process');
 async function createProject() {
   const projectName = await input({ message: 'Enter project name: ' });
   const envName = await input({ message: 'Enter env name: ', default: 'prod' });
-  const dirPath = path.join(__dirname, '../k8s_yml', projectName, envName)
+  const dirPath = path.join(__dirname, '../projects', projectName, envName)
   fs.mkdirSync(dirPath, {recursive: true});
 
   const config = {};

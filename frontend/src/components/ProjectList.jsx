@@ -35,6 +35,10 @@ const ProjectList = () => {
     navigate(`/edit/${projectName}/${envName}`);
   };
 
+  const handleManageApps = (projectName, envName) => {
+    navigate(`/apps/${projectName}/${envName}`);
+  };
+
   const handleCreateNew = () => {
     navigate('/create');
   };
@@ -101,12 +105,40 @@ const ProjectList = () => {
                     </td>
                     <td>{formatDate(project.createdAt)}</td>
                     <td>
-                      <button
-                        className="btn secondary"
-                        onClick={() => handleEdit(project.projectName, project.envName)}
-                      >
-                        {t('common.edit')}
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          className="btn secondary small"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '13px',
+                            borderRadius: '4px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            backgroundColor: '#6c757d',
+                            color: 'white'
+                          }}
+                          onClick={() => handleEdit(project.projectName, project.envName)}
+                        >
+                          {t('common.edit')}
+                        </button>
+                        <button
+                          className="btn secondary small"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '13px',
+                            borderRadius: '4px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            backgroundColor: '#17a2b8',
+                            color: 'white'
+                          }}
+                          onClick={() => handleManageApps(project.projectName, project.envName)}
+                        >
+                          {t('common.manageApps')}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 // 创建项目配置的控制器
 const createProject = (req, res) => {
@@ -20,7 +19,7 @@ const createProject = (req, res) => {
     } = req.body;
 
     // 创建目录
-    const dirPath = path.join(__dirname, '../../k8s_yml', projectName, envName);
+    const dirPath = path.join(__dirname, '../../projects', projectName, envName);
     fs.mkdirSync(dirPath, { recursive: true });
 
     const config = {
@@ -46,35 +45,14 @@ const createProject = (req, res) => {
       config["aws"] = { 
         region, 
         accessKey, 
-        secretKey
+        secretKey,
+        albs: awsConfig.albs || []
       };
       
-      try {
-        const shell = `aws configure set aws_access_key_id ${config.aws.accessKey};`
-          + `aws configure set aws_secret_access_key ${config.aws.secretKey};`
-          + `aws eks update-kubeconfig --kubeconfig="${path.join(dirPath, 'kube_conf.yml')}" --region ${region} --name ${clusterName};`;
-        execSync(shell);
-      } catch (error) {
-        console.error('AWS EKS configuration error:', error);
-        fs.rmSync(dirPath, { recursive: true, force: true });
-        return res.status(500).json({ error: 'Failed to configure AWS EKS.' + (error.stderr && Buffer.from(error.stderr)) });
-      }
     }
 
     // 创建命名空间
     config['namespace'] = namespace;
-    try {
-      execSync(`kubectl --insecure-skip-tls-verify --kubeconfig="${path.join(dirPath, 'kube_conf.yml')}" create namespace ${namespace}`);
-    } catch (error) {
-      const errMsg = error.stderr && Buffer.from(error.stderr)
-      if (errMsg && errMsg.includes('exists')) {
-        // 继续执行，即使命名空间已存在
-      } else {
-        console.error('Namespace creation error:', error);
-        fs.rmSync(dirPath, { recursive: true, force: true });
-        return res.status(500).json({ error: 'Failed to create namespace.' + errMsg });
-      }
-    }
 
     // 处理Docker仓库配置
     config['docker_repository'] = {
@@ -111,7 +89,7 @@ const createProject = (req, res) => {
 // 列出所有项目配置的控制器
 const listProjects = (req, res) => {
   try {
-    const baseDir = path.join(__dirname, '../../k8s_yml');
+    const baseDir = path.join(__dirname, '../../projects');
     
     // 检查目录是否存在
     if (!fs.existsSync(baseDir)) {
@@ -169,7 +147,7 @@ const getProjectDetail = (req, res) => {
   try {
     const { projectName, envName } = req.params;
     
-    const projectPath = path.join(__dirname, '../../k8s_yml', projectName, envName);
+    const projectPath = path.join(__dirname, '../../projects', projectName, envName);
     const configPath = path.join(projectPath, 'config.json');
     const kubeConfigPath = path.join(projectPath, 'kube_conf.yml');
     
@@ -201,11 +179,14 @@ const getProjectDetail = (req, res) => {
         region: config.aws.region || '',
         accessKey: config.aws.accessKey || '',
         // 不返回secretKey
-        secretKey: ''
+        secretKey: '',
+        // 返回albs配置
+        albs: config.aws.albs || []
       } : {
         region: '',
         accessKey: '',
-        secretKey: ''
+        secretKey: '',
+        albs: []
       },
       dockerRepositoryType: config.docker_repository?.type || 'standard',
       dockerRepositoryUrl: config.docker_repository?.url || '',
@@ -229,7 +210,7 @@ const editProject = (req, res) => {
     const { projectName, envName } = req.params;
     const updates = req.body;
     
-    const projectPath = path.join(__dirname, '../../k8s_yml', projectName, envName);
+    const projectPath = path.join(__dirname, '../../projects', projectName, envName);
     const configPath = path.join(projectPath, 'config.json');
     const kubeConfigPath = path.join(projectPath, 'kube_conf.yml');
     
@@ -252,18 +233,6 @@ const editProject = (req, res) => {
     // 更新配置
     if (updates.namespace && updates.namespace !== config.namespace) {
       config['namespace'] = updates.namespace;
-      // 尝试创建新的命名空间
-      try {
-        execSync(`kubectl --insecure-skip-tls-verify --kubeconfig="${kubeConfigPath}" create namespace ${updates.namespace}`);
-      } catch (error) {
-        const errMsg = error.stderr && Buffer.from(error.stderr)
-        if (errMsg && errMsg.includes('exists')) {
-          // 继续执行，即使命名空间已存在
-        } else {
-          console.error('Namespace creation error:', error);
-          return res.status(500).json({ error: 'Failed to create namespace.' + errMsg });
-        }
-      }
     }
     
     // 更新Docker仓库配置
@@ -309,18 +278,10 @@ const editProject = (req, res) => {
         config.aws.secretKey = secretKey;
         awsConfigChanged = true;
       }
-      
-      // 如果配置发生了变化且是AWS EKS，更新kubeconfig
-      if (config.k8sType === 'aws' && awsConfigChanged && config.clusterName && config.aws.region && config.aws.accessKey && config.aws.secretKey) {
-        try {
-          const shell = `aws configure set aws_access_key_id ${config.aws.accessKey};`
-            + `aws configure set aws_secret_access_key ${config.aws.secretKey};`
-            + `aws eks update-kubeconfig --kubeconfig="${kubeConfigPath}" --region ${config.aws.region} --name ${config.clusterName};`;
-          execSync(shell);
-        } catch (error) {
-          console.error('AWS EKS configuration error:', error);
-          return res.status(500).json({ error: 'Failed to configure AWS EKS.' + (error.stderr && Buffer.from(error.stderr)) });
-        }
+      // 更新ALBs配置
+      if (updates.awsConfig.albs !== undefined) {
+        config.aws.albs = updates.awsConfig.albs;
+        awsConfigChanged = true;
       }
     }
     

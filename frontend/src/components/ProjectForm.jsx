@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 const ProjectForm = () => {
   const navigate = useNavigate();
+  const { projectId } = useParams();
   const { t } = useTranslation();
   // 表单状态
   const [formData, setFormData] = useState({
@@ -15,7 +16,16 @@ const ProjectForm = () => {
     awsConfig: {
       region: 'us-east-1',
       accessKey: '',
-      secretKey: ''
+      secretKey: '',
+      albs: [
+        {
+          name: '',
+          certificateARNs: [''],
+          subnets: {
+            ids: ['']
+          }
+        }
+      ]
     },
     namespace: '',
     dockerRepositoryType: 'standard',
@@ -52,6 +62,81 @@ const ProjectForm = () => {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
   }
+  
+  // ALBs相关处理函数
+  const updateAlb = (index, updatedAlb) => {
+    const newAlbs = [...formData.awsConfig.albs];
+    newAlbs[index] = updatedAlb;
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: newAlbs
+      }
+    }));
+  };
+  
+  const addAlb = () => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: [...prev.awsConfig.albs, {
+          name: '',
+          certificateARNs: [''],
+          subnets: {
+            ids: ['']
+          }
+        }]
+      }
+    }));
+  };
+  
+  const removeAlb = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.filter((_, i) => i !== index)
+      }
+    }));
+  };
+  
+  const addCertificate = (albIndex) => {
+    const newAlbs = [...formData.awsConfig.albs];
+    newAlbs[albIndex].certificateARNs.push('');
+    updateAlb(albIndex, newAlbs[albIndex]);
+  };
+  
+  const removeCertificate = (albIndex, certIndex) => {
+    const newAlbs = [...formData.awsConfig.albs];
+    newAlbs[albIndex].certificateARNs = newAlbs[albIndex].certificateARNs.filter((_, i) => i !== certIndex);
+    updateAlb(albIndex, newAlbs[albIndex]);
+  };
+  
+  const addSubnet = (albIndex) => {
+    const newAlbs = [...formData.awsConfig.albs];
+    newAlbs[albIndex].subnets.ids.push('');
+    updateAlb(albIndex, newAlbs[albIndex]);
+  };
+  
+  const removeSubnet = (albIndex, subnetIndex) => {
+    const newAlbs = [...formData.awsConfig.albs];
+    newAlbs[albIndex].subnets.ids = newAlbs[albIndex].subnets.ids.filter((_, i) => i !== subnetIndex);
+    updateAlb(albIndex, newAlbs[albIndex]);
+  };
+  
+  const updateCertificate = (albIndex, certIndex, value) => {
+    const newAlbs = [...formData.awsConfig.albs];
+    newAlbs[albIndex].certificateARNs[certIndex] = value;
+    updateAlb(albIndex, newAlbs[albIndex]);
+  };
+  
+  const updateSubnet = (albIndex, subnetIndex, value) => {
+    const newAlbs = [...formData.awsConfig.albs];
+    newAlbs[albIndex].subnets.ids[subnetIndex] = value;
+    updateAlb(albIndex, newAlbs[albIndex]);
+  };
 
   // 验证表单
   const validateForm = () => {
@@ -79,6 +164,25 @@ const ProjectForm = () => {
       if (!formData.clusterName.trim()) {
         newErrors.awsClusterName = t('errors.requiredClusterName')
       }
+      
+      // 验证ALBs配置
+      for (let i = 0; i < formData.awsConfig.albs.length; i++) {
+        const alb = formData.awsConfig.albs[i];
+        
+        if (!alb.name.trim()) {
+          newErrors[`albName_${i}`] = t('errors.albNameRequired');
+        }
+        
+        const hasValidCert = alb.certificateARNs.some(cert => cert.trim());
+        if (!hasValidCert) {
+          newErrors[`certificateARNs_${i}`] = t('errors.certificateARNsRequired');
+        }
+        
+        const hasValidSubnet = alb.subnets.ids.some(subnet => subnet.trim());
+        if (!hasValidSubnet) {
+          newErrors[`subnetIds_${i}`] = t('errors.subnetIdsRequired');
+        }
+      }
     }
     
     if (!formData.namespace.trim()) {
@@ -102,6 +206,42 @@ const ProjectForm = () => {
     return Object.keys(newErrors).length === 0
   }
 
+  // 加载项目数据
+  const loadProjectData = async () => {
+    if (!projectId) return;
+    
+    try {
+      const response = await fetch(`/api/projects/${projectId}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        // 确保albs数组存在且格式正确
+        const albs = data.awsConfig?.albs && Array.isArray(data.awsConfig.albs) 
+          ? data.awsConfig.albs 
+          : [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }];
+        
+        setFormData({
+          ...data,
+          awsConfig: {
+            ...data.awsConfig,
+            albs: albs
+          }
+        });
+      } else {
+        throw new Error(data.error || t('errors.loadProjectFailed'));
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  
+  // 组件挂载时加载项目数据（编辑模式）
+  useEffect(() => {
+    if (projectId) {
+      loadProjectData();
+    }
+  }, [projectId]);
+  
   // 提交表单
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -116,8 +256,14 @@ const ProjectForm = () => {
       setIsSubmitting(true);
       setError(null);
       
-      const response = await fetch('/api/projects/create', {
-        method: 'POST',
+      const endpoint = projectId ? `/api/projects/${projectId}/edit` : '/api/projects/create';
+      const method = projectId ? 'PUT' : 'POST';
+      const successMessage = projectId 
+        ? `${t('projectForm.updateSuccess')}：${formData.projectName}`
+        : `${t('projectForm.createSuccess')}：${formData.projectName}`;
+      
+      const response = await fetch(endpoint, {
+        method: method,
         headers: {
           'Content-Type': 'application/json'
         },
@@ -127,12 +273,12 @@ const ProjectForm = () => {
       const result = await response.json()
       
       if (response.ok) {
-          setSuccess(`${t('projectForm.createSuccess')}：${result.projectPath}`);
+          setSuccess(successMessage);
           setTimeout(() => {
             navigate('/');
           }, 1500);
       } else {
-        throw new Error(result.error || t('errors.createProjectFailed'));
+        throw new Error(result.error || (projectId ? t('errors.updateProjectFailed') : t('errors.createProjectFailed')));
       }
     } catch (err) {
       setError(err.message);
@@ -149,8 +295,8 @@ const ProjectForm = () => {
   return (
     <div className="container">
       <div className="header">
-        <h1>{t('projectForm.title')}</h1>
-        <p>{t('projectForm.description')}</p>
+        <h1>{projectId ? t('projectForm.editTitle') : t('projectForm.title')}</h1>
+        <p>{projectId ? t('projectForm.editDescription') : t('projectForm.description')}</p>
       </div>
       
       {error && <div className="error">{error}</div>}
@@ -271,6 +417,121 @@ const ProjectForm = () => {
               />
               {errors.awsSecretKey && <div className="error">{errors.awsSecretKey}</div>}
             </div>
+            
+            {/* ALBs配置 */}
+            {formData.k8sType === 'aws' && (
+              <div className="form-group albs-config">
+                <h3>{t('projectForm.albs')}</h3>
+                {formData.awsConfig.albs.map((alb, albIndex) => (
+                  <div key={albIndex} className="alb-item">
+                    <div className="alb-header">
+                      <label>{t('projectForm.albName')} {albIndex + 1}</label>
+                      {formData.awsConfig.albs.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => removeAlb(albIndex)}
+                        >
+                          {t('common.remove')}
+                        </button>
+                      )}
+                    </div>
+                    
+                    <input
+                      type="text"
+                      value={alb.name}
+                      onChange={(e) => updateAlb(albIndex, { ...alb, name: e.target.value })}
+                      placeholder={t('projectForm.albNamePlaceholder')}
+                      className="form-control"
+                    />
+                    {errors[`albName_${albIndex}`] && (
+                      <div className="error">{errors[`albName_${albIndex}`]}</div>
+                    )}
+                    
+                    {/* Certificate ARNs */}
+                    <div className="nested-group">
+                      <div className="nested-header">
+                        <label>{t('projectForm.certificateARNs')}</label>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => addCertificate(albIndex)}
+                        >
+                          {t('projectForm.addCertificate')}
+                        </button>
+                      </div>
+                      {alb.certificateARNs.map((cert, certIndex) => (
+                        <div key={certIndex} className="nested-item">
+                          <input
+                            type="text"
+                            value={cert}
+                            onChange={(e) => updateCertificate(albIndex, certIndex, e.target.value)}
+                            placeholder={t('projectForm.certificateARNsPlaceholder')}
+                            className="form-control"
+                          />
+                          {alb.certificateARNs.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-xs"
+                              onClick={() => removeCertificate(albIndex, certIndex)}
+                            >
+                              {t('common.remove')}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {errors[`certificateARNs_${albIndex}`] && (
+                        <div className="error">{errors[`certificateARNs_${albIndex}`]}</div>
+                      )}
+                    </div>
+                    
+                    {/* Subnet IDs */}
+                    <div className="nested-group">
+                      <div className="nested-header">
+                        <label>{t('projectForm.subnetIds')}</label>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => addSubnet(albIndex)}
+                        >
+                          {t('projectForm.addSubnet')}
+                        </button>
+                      </div>
+                      {alb.subnets.ids.map((subnet, subnetIndex) => (
+                        <div key={subnetIndex} className="nested-item">
+                          <input
+                            type="text"
+                            value={subnet}
+                            onChange={(e) => updateSubnet(albIndex, subnetIndex, e.target.value)}
+                            placeholder={t('projectForm.subnetIdsPlaceholder')}
+                            className="form-control"
+                          />
+                          {alb.subnets.ids.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-xs"
+                              onClick={() => removeSubnet(albIndex, subnetIndex)}
+                            >
+                              {t('common.remove')}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {errors[`subnetIds_${albIndex}`] && (
+                        <div className="error">{errors[`subnetIds_${albIndex}`]}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={addAlb}
+                >
+                  {t('projectForm.addAlb')}
+                </button>
+              </div>
+            )}
           </div>
         )}
         
@@ -333,7 +594,8 @@ const ProjectForm = () => {
             {t('common.cancel')}
           </button>
           <button type="submit" className="btn primary" disabled={isSubmitting}>
-            {isSubmitting ? t('common.creating') + '...' : t('projectForm.createProject')}
+            {isSubmitting ? (projectId ? t('common.updating') + '...' : t('common.creating') + '...') : 
+             (projectId ? t('projectForm.updateProject') : t('projectForm.createProject'))}
           </button>
         </div>
       </form>

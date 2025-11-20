@@ -132,82 +132,502 @@ body {
 }
 
 /* 表单样式 */
+.app-form {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* 表单分组样式改进 */
+.form-section {
+  padding: 24px;
+  border-bottom: 1px solid #eaeaea;
+  transition: all 0.3s ease;
+}
+
+.form-section:last-child {
+  border-bottom: none;
+}
+
+.form-section:hover {
+  background-color: #fafafa;
+}
+
+/* 标题样式改进 */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 24px 0;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.header h1 {
+  color: #2c3e50;
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.header p {
+  color: #6c757d;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* 表单分组标题样式 */
+.form-section h2 {
+  color: #2c3e50;
+  font-size: 1.35rem;
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-weight: 600;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.form-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background-color: #007bff;
+  border-radius: 3px;
+}
+
+/* 子标题样式 */
+.form-section h3 {
+  color: #495057;
+  font-size: 1.1rem;
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
 .form-group {
   margin-bottom: 20px;
+  transition: all 0.3s ease;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
-  color: #2c3e50;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 0.95rem;
 }
 
+/* 美化输入框样式 */
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.form-group input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* 美化选择器样式 */
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 16px 12px;
+  padding-right: 2.5rem;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* 美化文本域样式 */
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  resize: vertical;
+  min-height: 100px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.form-group textarea::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* 美化数字输入框 */
+.form-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 禁用状态样式 */
+.form-group input:disabled,
+.form-group select:disabled,
+.form-group textarea:disabled {
+  background-color: #f8f9fa;
+  border-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* 错误状态样式 */
+.form-group input.error-field,
+.form-group select.error-field,
+.form-group textarea.error-field {
+  border-color: #dc3545;
+}
+
+.form-group input.error-field:focus,
+.form-group select.error-field:focus,
+.form-group textarea.error-field:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.form-group .error {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 5px;
+}
+
+/* 响应式网格布局 */
+.resources-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* 端口配置项样式 */
+.port-item {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #eaeaea;
+}
+
+.port-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.port-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.port-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* Ingress配置区域样式 */
+.ingress-config {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+  border: 1px solid #eaeaea;
+}
+
+.ingress-config h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+/* 动画和过渡效果 */
+
+/* Ingress配置区域动画 */
+.ingress-config {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 消息提示动画 */
+.error,
+.success {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 端口项目增删动画 */
+.port-item {
+  animation: fadeIn 0.3s ease-out;
+  transition: all 0.3s ease;
+}
+
+.port-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* 页面加载动画 */
+.container {
+  animation: pageFadeIn 0.5s ease-out;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 加载状态动画 */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  font-size: 1.2rem;
+  color: #007bff;
+}
+
+.loading::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  margin-left: 10px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 表单元素过渡增强 */
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-/* 按钮样式 */
+/* 按钮点击波纹效果 */
 .btn {
-  display: inline-block;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  text-decoration: none;
+  position: relative;
+  overflow: hidden;
 }
 
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .resources-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .port-fields {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .form-section {
+    padding: 16px;
+  }
+  
+  .container {
+    padding: 16px;
+  }
+}
+
+/* 按钮样式优化 */
+.btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-width: 100px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* 主按钮 */
 .btn.primary {
-  background-color: #3498db;
+  background-color: #007bff;
   color: white;
 }
 
 .btn.primary:hover {
-  background-color: #2980b9;
+  background-color: #0056b3;
 }
 
+/* 次要按钮 */
 .btn.secondary {
-  background-color: #95a5a6;
+  background-color: #6c757d;
   color: white;
 }
 
 .btn.secondary:hover {
-  background-color: #7f8c8d;
+  background-color: #545b62;
 }
 
+/* 危险按钮 */
+.btn.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn.danger:hover {
+  background-color: #c82333;
+}
+
+/* 小型按钮 */
 .btn.small {
-  padding: 6px 12px;
-  font-size: 14px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  min-width: auto;
 }
 
 /* 表单操作区域 */
 .form-actions {
   display: flex;
-  gap: 10px;
   justify-content: flex-end;
-  margin-top: 30px;
+  gap: 12px;
+  padding: 24px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #eaeaea;
+  margin-top: 24px;
+  border-radius: 0 0 8px 8px;
+}
+
+/* 按钮禁用状态 */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 响应式按钮布局 */
+@media (max-width: 768px) {
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+  }
 }
 
 /* 表单区块 */
@@ -235,6 +655,76 @@ body {
   padding: 20px;
   border-radius: 6px;
   margin-top: 15px;
+}
+
+/* ALBs配置样式 */
+.albs-config {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f0f4f8;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
+}
+
+.alb-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.alb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.alb-header label {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+.nested-group {
+  margin-top: 15px;
+  padding-left: 20px;
+}
+
+.nested-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.nested-header label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+}
+
+.nested-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.nested-item input {
+  flex: 1;
+}
+
+.btn-xs {
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 13px;
 }
 
 /* 项目列表样式 */
@@ -302,4 +792,64 @@ body {
 /* 隐藏类 */
 .hidden {
   display: none;
+}
+
+/* 美化的Toggle Switch样式 */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin-right: 10px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #3498db;
+}
+
+input:focus + .toggle-slider {
+  box-shadow: 0 0 1px #3498db;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+/* 调整Ingress配置区域的样式 */
+.ingress-config {
+  margin-top: 15px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
 }

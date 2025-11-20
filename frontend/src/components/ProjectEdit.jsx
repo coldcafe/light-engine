@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import Toast from './Toast';
 
 const ProjectEdit = () => {
   const { projectName, envName } = useParams();
@@ -15,7 +16,14 @@ const ProjectEdit = () => {
       awsConfig: {
         region: '',
         accessKey: '',
-        secretKey: ''
+        secretKey: '',
+        albs: [{ // 添加ALB配置数组
+          name: '',
+          certificateARNs: [''],
+          subnets: {
+            ids: ['']
+          }
+        }]
       },
       dockerRepositoryType: 'standard',
       dockerRepositoryUrl: '',
@@ -27,10 +35,28 @@ const ProjectEdit = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     loadProjectData();
   }, [projectName, envName]);
+
+  // 处理URL锚点滚动功能
+  useEffect(() => {
+    if (!loading) {
+      // 检查URL中的锚点
+      const hash = window.location.hash;
+      if (hash) {
+        // 延迟执行，确保所有DOM元素都已渲染
+        setTimeout(() => {
+          const element = document.querySelector(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 300);
+      }
+    }
+  }, [loading]);
 
   const loadProjectData = async () => {
         try {
@@ -68,11 +94,15 @@ const ProjectEdit = () => {
               awsConfig: detailedConfig.awsConfig ? {
                 region: detailedConfig.awsConfig.region || '',
                 accessKey: detailedConfig.awsConfig.accessKey || '',
-                secretKey: '' // 不显示AWS Secret Key
+                secretKey: '', // 不显示AWS Secret Key
+                albs: detailedConfig.awsConfig.albs && detailedConfig.awsConfig.albs.length > 0 
+                  ? detailedConfig.awsConfig.albs 
+                  : [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }]
               } : {
                 region: '',
                 accessKey: '',
-                secretKey: ''
+                secretKey: '',
+                albs: [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }]
               },
               dockerRepositoryType: project.dockerRepositoryType || 'standard',
               dockerRepositoryUrl: detailedConfig.dockerRepositoryUrl || '',
@@ -83,7 +113,11 @@ const ProjectEdit = () => {
             setFormData(newFormData);
           }
         } catch (err) {
-      setError(err.message);
+      // 使用toast显示加载错误
+      setToast({
+        message: err.message,
+        type: 'error'
+      });
       console.error(t('errors.loadingProjectFailed'), err);
     } finally {
           setLoading(false);
@@ -108,6 +142,171 @@ const ProjectEdit = () => {
     }));
   };
 
+  // ALB相关处理函数
+  const updateAlb = (index, albData) => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.map((alb, i) => 
+          i === index ? { ...alb, ...albData } : alb
+        )
+      }
+    }));
+  };
+
+  const addAlb = () => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: [...prev.awsConfig.albs, {
+          name: '',
+          certificateARNs: [''],
+          subnets: {
+            ids: ['']
+          }
+        }]
+      }
+    }));
+  };
+
+  const removeAlb = (index) => {
+    if (formData.awsConfig.albs.length <= 1) return;
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  // 证书相关处理函数
+  const addCertificate = (albIndex) => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.map((alb, i) => {
+          if (i === albIndex) {
+            return {
+              ...alb,
+              certificateARNs: [...alb.certificateARNs, '']
+            };
+          }
+          return alb;
+        })
+      }
+    }));
+  };
+
+  const removeCertificate = (albIndex, certIndex) => {
+    if (formData.awsConfig.albs[albIndex].certificateARNs.length <= 1) return;
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.map((alb, i) => {
+          if (i === albIndex) {
+            return {
+              ...alb,
+              certificateARNs: alb.certificateARNs.filter((_, j) => j !== certIndex)
+            };
+          }
+          return alb;
+        })
+      }
+    }));
+  };
+
+  const updateCertificate = (albIndex, certIndex, value) => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.map((alb, i) => {
+          if (i === albIndex) {
+            const newCertificates = [...alb.certificateARNs];
+            newCertificates[certIndex] = value;
+            return {
+              ...alb,
+              certificateARNs: newCertificates
+            };
+          }
+          return alb;
+        })
+      }
+    }));
+  };
+
+  // 子网相关处理函数
+  const addSubnet = (albIndex) => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.map((alb, i) => {
+          if (i === albIndex) {
+            return {
+              ...alb,
+              subnets: {
+                ...alb.subnets,
+                ids: [...alb.subnets.ids, '']
+              }
+            };
+          }
+          return alb;
+        })
+      }
+    }));
+  };
+
+  const removeSubnet = (albIndex, subnetIndex) => {
+    if (formData.awsConfig.albs[albIndex].subnets.ids.length <= 1) return;
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.map((alb, i) => {
+          if (i === albIndex) {
+            return {
+              ...alb,
+              subnets: {
+                ...alb.subnets,
+                ids: alb.subnets.ids.filter((_, j) => j !== subnetIndex)
+              }
+            };
+          }
+          return alb;
+        })
+      }
+    }));
+  };
+
+  const updateSubnet = (albIndex, subnetIndex, value) => {
+    setFormData(prev => ({
+      ...prev,
+      awsConfig: {
+        ...prev.awsConfig,
+        albs: prev.awsConfig.albs.map((alb, i) => {
+          if (i === albIndex) {
+            const newSubnets = [...alb.subnets.ids];
+            newSubnets[subnetIndex] = value;
+            return {
+              ...alb,
+              subnets: {
+                ...alb.subnets,
+                ids: newSubnets
+              }
+            };
+          }
+          return alb;
+        })
+      }
+    }));
+  };
+
   const validateForm = () => {
     const errors = {};
     
@@ -124,6 +323,31 @@ const ProjectEdit = () => {
         errors.awsSecretKey = t('errors.awsSecretKeyRequired');
       }
       if (!formData.clusterName) errors.awsClusterName = t('errors.awsClusterNameRequired');
+      
+      // 验证ALB配置
+      if (formData.awsConfig.albs && formData.awsConfig.albs.length > 0) {
+        formData.awsConfig.albs.forEach((alb, albIndex) => {
+          if (!alb.name || alb.name.trim() === '') {
+            errors[`albName_${albIndex}`] = t('errors.albNameRequired');
+          }
+          
+          if (alb.certificateARNs && alb.certificateARNs.length > 0) {
+            alb.certificateARNs.forEach((cert, certIndex) => {
+              if (!cert || cert.trim() === '') {
+                errors[`albCertificate_${albIndex}_${certIndex}`] = t('errors.certificateARNRequired');
+              }
+            });
+          }
+          
+          if (alb.subnets && alb.subnets.ids && alb.subnets.ids.length > 0) {
+            alb.subnets.ids.forEach((subnet, subnetIndex) => {
+              if (!subnet || subnet.trim() === '') {
+                errors[`albSubnet_${albIndex}_${subnetIndex}`] = t('errors.subnetIDRequired');
+              }
+            });
+          }
+        });
+      }
     } else if (formData.k8sType === 'standard') {
       // 不再强制要求k8sConf，因为我们不显示现有值
       // 只有在提供新值时才验证必填性
@@ -146,13 +370,16 @@ const ProjectEdit = () => {
     
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
-      setError(t('errors.checkForm'));
+      // 显示表单验证错误的toast
+      setToast({
+        message: t('errors.checkForm'),
+        type: 'error'
+      });
       return;
     }
     
     try {
       setSubmitting(true);
-      setError(null);
       
       const response = await fetch(
         `/api/projects/edit/${projectName}/${envName}`,
@@ -170,13 +397,21 @@ const ProjectEdit = () => {
         throw new Error(errorData.error || t('errors.updateFailed'));
       }
       
-      setSuccess(true);
+      // 显示成功的toast
+      setToast({
+        message: t('projectEdit.updateSuccess'),
+        type: 'success'
+      });
+      
       setTimeout(() => {
         navigate('/');
       }, 1500);
     } catch (err) {
-      setError(err.message);
-      setSuccess(false);
+      // 显示错误的toast
+      setToast({
+        message: err.message,
+        type: 'error'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -197,8 +432,13 @@ const ProjectEdit = () => {
         <p>{t('projectEdit.subtitle', { projectName, envName })}</p>
       </div>
       
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">{t('projectEdit.updateSuccess')}</div>}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
       
       <form onSubmit={handleSubmit} className="project-form">
         <div className="form-section">
@@ -297,70 +537,174 @@ const ProjectEdit = () => {
                 onChange={(e) => handleAwsConfigChange('secretKey', e.target.value)}
                 placeholder={t('projectForm.awsSecretKeyPlaceholder')}
               />
-              <small className="hint">{t('projectForm.awsSecretKeyHint')}</small>
-            </div>
-
+  </div>
+            <small className="hint">{t('projectForm.awsSecretKeyHint')}</small>
           </div>
-        )}
-        
+        )}     {/* ALB配置区域 */}
+      {formData.k8sType === 'aws' && (
         <div className="form-section">
-          <h2>{t('projectForm.dockerConfig')}</h2>
-          <div className="form-group">
-            <label>{t('projectForm.dockerRepositoryType')}</label>
-            <select
-              name="dockerRepositoryType"
-              value={formData.dockerRepositoryType}
-              onChange={handleChange}
-            >
-              <option value="standard">{t('projectForm.standardRepository')}</option>
-              <option value="aws">AWS ECR</option>
-            </select>
-          </div>
+          <h2 id="albs-configuration">{t('projectForm.albs')}</h2>
+          <button 
+            type="button" 
+            className="btn secondary small" 
+            onClick={addAlb}
+          >
+            {t('projectForm.addAlb')}
+          </button>
           
-          {formData.dockerRepositoryType === 'standard' && (
-            <>
+          {formData.awsConfig.albs.map((alb, albIndex) => (
+            <div key={albIndex} className="alb-item">
+              <div className="alb-header">
+                <label>ALB {albIndex + 1}</label>
+                <button 
+                  type="button" 
+                  className="btn danger small" 
+                  onClick={() => removeAlb(albIndex)}
+                  disabled={formData.awsConfig.albs.length <= 1}
+                >
+                  {t('projectForm.removeAlb')}
+                </button>
+              </div>
+              
+              {/* ALB名称 */}
               <div className="form-group">
-                <label>{t('projectForm.dockerUrl')}</label>
+                <label>{t('projectForm.albName')}</label>
                 <input
                   type="text"
-                  name="dockerRepositoryUrl"
-                  value={formData.dockerRepositoryUrl}
-                  onChange={handleChange}
-                  placeholder={t('projectForm.dockerUrlPlaceholder')}
+                  value={alb.name || ''}
+                  onChange={(e) => updateAlb(albIndex, { ...alb, name: e.target.value })}
+                  placeholder={t('projectForm.albNamePlaceholder')}
                 />
               </div>
-              <div className="form-group">
-                <label>{t('projectForm.username')}</label>
-                <input
-                  type="text"
-                  name="dockerRepositoryUsername"
-                  value={formData.dockerRepositoryUsername}
-                  onChange={handleChange}
-                  placeholder={t('projectForm.usernamePlaceholder')}
-                />
+              
+              {/* 证书配置 */}
+              <div className="nested-group">
+                <div className="nested-header">
+                  <label>{t('projectForm.certificateARNs')}</label>
+                  <button 
+                    type="button" 
+                    className="btn secondary small" 
+                    onClick={() => addCertificate(albIndex)}
+                  >
+                    {t('projectForm.addCertificate')}
+                  </button>
+                </div>
+                {alb.certificateARNs.map((cert, certIndex) => (
+                  <div key={certIndex} className="nested-item">
+                    <input
+                      type="text"
+                      value={cert || ''}
+                      onChange={(e) => updateCertificate(albIndex, certIndex, e.target.value)}
+                      placeholder={t('projectForm.certificateARNPlaceholder')}
+                      style={{ flex: 1 }}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn danger small" 
+                      onClick={() => removeCertificate(albIndex, certIndex)}
+                      disabled={alb.certificateARNs.length <= 1}
+                    >
+                      {t('projectForm.remove')}
+                    </button>
+                  </div>
+                ))}
               </div>
-              <div className="form-group">
-                <label>{t('projectForm.password')}</label>
-                <input
-                  type="password"
-                  name="dockerRepositoryPassword"
-                  value={formData.dockerRepositoryPassword}
-                  onChange={handleChange}
-                  placeholder={t('projectForm.passwordPlaceholder')}
-                />
+              
+              {/* 子网配置 */}
+              <div className="nested-group">
+                <div className="nested-header">
+                  <label>{t('projectForm.subnetIds')}</label>
+                  <button 
+                    type="button" 
+                    className="btn secondary small" 
+                    onClick={() => addSubnet(albIndex)}
+                  >
+                    {t('projectForm.addSubnet')}
+                  </button>
+                </div>
+                {alb.subnets.ids.map((subnet, subnetIndex) => (
+                  <div key={subnetIndex} className="nested-item">
+                    <input
+                      type="text"
+                      value={subnet || ''}
+                      onChange={(e) => updateSubnet(albIndex, subnetIndex, e.target.value)}
+                      placeholder={t('projectForm.subnetIDPlaceholder')}
+                      style={{ flex: 1 }}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn danger small" 
+                      onClick={() => removeSubnet(albIndex, subnetIndex)}
+                      disabled={alb.subnets.ids.length <= 1}
+                    >
+                      {t('projectForm.remove')}
+                    </button>
+                  </div>
+                ))}
               </div>
-            </>
-          )}
+            </div>
+          ))}
+        </div>
+      )}
+      
+      <div className="form-section">
+        <h2>{t('projectForm.dockerConfig')}</h2>
+        <div className="form-group">
+          <label>{t('projectForm.dockerRepositoryType')}</label>
+          <select
+            name="dockerRepositoryType"
+            value={formData.dockerRepositoryType}
+            onChange={handleChange}
+          >
+            <option value="standard">{t('projectForm.standardRepository')}</option>
+            <option value="aws">AWS ECR</option>
+          </select>
         </div>
         
-        <div className="form-actions">
-          <button type="button" className="btn secondary" onClick={handleCancel}>
-              {t('projectForm.cancel')}
-            </button>
-            <button type="submit" className="btn primary" disabled={submitting}>
-              {submitting ? t('projectForm.saving') : t('projectForm.saveChanges')}
-            </button>
-        </div>
+        {formData.dockerRepositoryType === 'standard' && (
+          <>
+            <div className="form-group">
+              <label>{t('projectForm.dockerUrl')}</label>
+              <input
+                type="text"
+                name="dockerRepositoryUrl"
+                value={formData.dockerRepositoryUrl}
+                onChange={handleChange}
+                placeholder={t('projectForm.dockerUrlPlaceholder')}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t('projectForm.username')}</label>
+              <input
+                type="text"
+                name="dockerRepositoryUsername"
+                value={formData.dockerRepositoryUsername}
+                onChange={handleChange}
+                placeholder={t('projectForm.usernamePlaceholder')}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t('projectForm.password')}</label>
+              <input
+                type="password"
+                name="dockerRepositoryPassword"
+                value={formData.dockerRepositoryPassword}
+                onChange={handleChange}
+                placeholder={t('projectForm.passwordPlaceholder')}
+              />
+            </div>
+          </>
+        )}
+      </div>
+      
+      <div className="form-actions">
+        <button type="button" className="btn secondary" onClick={handleCancel}>
+            {t('projectForm.cancel')}
+          </button>
+          <button type="submit" className="btn primary" disabled={submitting}>
+            {submitting ? t('projectForm.saving') : t('projectForm.saveChanges')}
+          </button>
+      </div>
       </form>
     </div>
   );

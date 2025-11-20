@@ -16,4 +16,4 @@ xz -d node-v22.20.0-linux-x64.tar.xz && tar xf node-v22.20.0-linux-x64.tar
 mv node-v22.20.0-linux-x64 /usr/local/node
 
 # get eks kubeconfig
-aws eks update-kubeconfig --kubeconfig="./k8s_yml/psy/test/kube_conf.yml"  --region us-east-1 --name [cluster-name]
+aws eks update-kubeconfig --kubeconfig="./projects/psy/test/kube_conf.yml"  --region us-east-1 --name [cluster-name]

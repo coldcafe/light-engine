@@ -25,6 +25,9 @@ exports.genDeployment = function genDeployment(dirpath, config, appName, image) 
     },
     "spec": getSpec(dirpath, appName, appConfig, image)
   };
+  if (!fs.existsSync(path.join(dirpath, 'ymls'))) {
+    fs.mkdirSync(path.join(dirpath, 'ymls'), { recursive: true });
+  }
   fs.writeFileSync(path.join(dirpath, 'ymls', appName + "-deployment.yml"), YAML.stringify(deployment))
 }
 
