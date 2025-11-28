@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { api } from '../api/apiService';
 
 const AppForm = () => {
   const { projectName, envName, appName: editAppName } = useParams();
@@ -55,15 +56,8 @@ const AppForm = () => {
 
   const fetchAlbs = async () => {
     try {
-      const configResponse = await fetch(`/api/projects/detail/${projectName}/${envName}`);
-      let detailedConfig = {};
-
-      if (configResponse.ok) {
-        detailedConfig = await configResponse.json();
-      } else {
-        // 如果没有专门的detail API，我们尝试通过一个额外的API请求来获取配置
-        console.warn('No detail API available, using basic information');
-      }
+      const response = await api.get(`/projects/detail/${projectName}/${envName}`);
+      const detailedConfig = response.data;
       // 从配置中提取ALB信息
       if (detailedConfig.awsConfig && detailedConfig.awsConfig.albs) {
         setAlbs(detailedConfig.awsConfig.albs);
@@ -77,11 +71,8 @@ const AppForm = () => {
   const fetchAppData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/apps/${projectName}/${envName}/detail/${editAppName}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch app data');
-      }
-      const data = await response.json();
+      const response = await api.get(`/apps/${projectName}/${envName}/detail/${editAppName}`);
+      const data = response.data;
 
       setFormData({
         appName: data.appName,
@@ -318,25 +309,13 @@ const AppForm = () => {
       let response;
       if (isEditMode) {
         // 编辑模式
-        response = await fetch(`/api/apps/${projectName}/${envName}/edit/${editAppName}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(submitData)
-        });
+        response = await api.put(`/apps/${projectName}/${envName}/edit/${editAppName}`, submitData);
       } else {
         // 创建模式
-        response = await fetch(`/api/apps/${projectName}/${envName}/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(submitData)
-        });
+        response = await api.post(`/apps/${projectName}/${envName}/create`, submitData);
       }
 
-      const result = await response.json();
+      const result = response.data;
 
       if (response.ok) {
         setSuccess(isEditMode ? t('appForm.updateSuccess') : t('appForm.createSuccess'));

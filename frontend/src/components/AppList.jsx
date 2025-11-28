@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { api } from '../api/apiService';
 
 // 添加样式对象
 const styles = {
@@ -139,15 +140,11 @@ const AppList = () => {
   const fetchApps = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/apps/${projectName}/${envName}/list`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch apps');
-      }
-      const data = await response.json();
-      setApps(data.apps);
+      const response = await api.get(`/apps/${projectName}/${envName}/list`);
+      setApps(response.data.apps || []);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to fetch apps');
       console.error('Error fetching apps:', err);
     } finally {
       setLoading(false);
@@ -173,15 +170,10 @@ const AppList = () => {
   const handleDelete = async (appName) => {
     if (window.confirm(t('appList.confirmDelete', { appName }))) {
       try {
-        const response = await fetch(`/api/apps/${projectName}/${envName}/delete/${appName}`, {
-          method: 'DELETE'
-        });
-        if (!response.ok) {
-          throw new Error('Failed to delete app');
-        }
+        await api.delete(`/apps/${projectName}/${envName}/delete/${appName}`);
         fetchApps();
       } catch (err) {
-        setError(err.message);
+        setError(err.message || 'Failed to delete app');
         console.error('Error deleting app:', err);
       }
     }
@@ -191,17 +183,11 @@ const AppList = () => {
     if (window.confirm(t('appList.confirmDeploy', { appName }))) {
       try {
         setLoading(true);
-        const response = await fetch(`/api/apps/${projectName}/${envName}/deploy/${appName}`, {
-          method: 'POST'
-        });
-        if (!response.ok) {
-          throw new Error('Failed to deploy app');
-        }
-        const data = await response.json();
+        await api.post(`/apps/${projectName}/${envName}/deploy/${appName}`, { appName });
         alert(t('appList.deploySuccess', { appName }));
         fetchApps();
       } catch (err) {
-        setError(err.message);
+        setError(err.message || 'Failed to deploy app');
         console.error('Error deploying app:', err);
       } finally {
         setLoading(false);

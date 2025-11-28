@@ -48,6 +48,18 @@ function getContainers(dirpath, appName, appConfig, image) {
   const envStr = fs.readFileSync(path.join(dirpath, 'envs',appConfig.envSecret + '.env'), 'utf-8')
   const envKeys = env2secret.getEnvKeys(envStr)
   const envs = [];
+
+  if (appConfig.aliyun) {
+    const {alicloudSlsStore, alicloudSlsProject} = appConfig.aliyun
+    if (alicloudSlsStore && alicloudSlsProject) {
+      envs.push(
+        { name: "aliyun_logs_" + projectName + "-" + appName + "-" + env, value: "stdout" },
+        { name: "aliyun_logs_" + projectName + "-" + appName + "-" + env + "_logstore", value: alicloudSlsStore },
+        { name: "aliyun_logs_" + projectName + "-" + appName + "-" + env + "_project", value: alicloudSlsProject },
+      )
+    }
+  }
+
   for (let key of envKeys) {
     if (envs.findIndex(i => i.name == key) == -1) {
       envs.push({

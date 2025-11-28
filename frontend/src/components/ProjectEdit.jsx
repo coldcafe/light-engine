@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { api } from '../api/apiService';
 import Toast from './Toast';
 
 const ProjectEdit = () => {
@@ -61,65 +62,44 @@ const ProjectEdit = () => {
   const loadProjectData = async () => {
         try {
           setLoading(true);
-          // 由于我们没有专门的获取单个项目详情的API，我们需要获取完整配置
-          // 从后端获取项目列表
-          const response = await fetch('/api/projects/list');
-          if (!response.ok) {
-            throw new Error('Failed to fetch project data');
-          }
-          const data = await response.json();
-          const project = data.projects.find(
-            p => p.projectName === projectName && p.envName === envName
-          );
+          // 获取详细配置
+          const configResponse = await api.get(`/projects/detail/${projectName}/${envName}`);
+          const detailedConfig = configResponse.data;
           
-          if (project) {
-            // 从文件系统获取完整配置
-            // 在实际应用中，这里应该通过一个专门的API来获取这些详细配置
-            const configResponse = await fetch(`/api/projects/detail/${projectName}/${envName}`);
-            let detailedConfig = {};
-            
-            if (configResponse.ok) {
-              detailedConfig = await configResponse.json();
-            } else {
-              // 如果没有专门的detail API，我们尝试通过一个额外的API请求来获取配置
-              console.warn('No detail API available, using basic information');
-            }
-            
-            // 构建表单数据
-            const newFormData = {
-              namespace: project.namespace || '',
-              k8sType: project.k8sType,
-              k8sConf: '', // 不显示kube_conf内容
-              clusterName: detailedConfig.clusterName || '', // 直接从response顶层获取clusterName
-              awsConfig: detailedConfig.awsConfig ? {
-                region: detailedConfig.awsConfig.region || '',
-                accessKey: detailedConfig.awsConfig.accessKey || '',
-                secretKey: '', // 不显示AWS Secret Key
-                albs: detailedConfig.awsConfig.albs && detailedConfig.awsConfig.albs.length > 0 
-                  ? detailedConfig.awsConfig.albs 
-                  : [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }]
-              } : {
-                region: '',
-                accessKey: '',
-                secretKey: '',
-                albs: [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }]
-              },
-              dockerRepositoryType: project.dockerRepositoryType || 'standard',
-              dockerRepositoryUrl: detailedConfig.dockerRepositoryUrl || '',
-              dockerRepositoryUsername: detailedConfig.dockerRepositoryUsername || '',
-              dockerRepositoryPassword: detailedConfig.dockerRepositoryPassword || ''
-            };
-            
-            setFormData(newFormData);
-          }
+          // 构建表单数据
+          const newFormData = {
+            namespace: detailedConfig.namespace || '',
+            k8sType: detailedConfig.k8sType || 'standard',
+            k8sConf: '', // 不显示kube_conf内容
+            clusterName: detailedConfig.clusterName || '', // 直接从response顶层获取clusterName
+            awsConfig: detailedConfig.awsConfig ? {
+              region: detailedConfig.awsConfig.region || '',
+              accessKey: detailedConfig.awsConfig.accessKey || '',
+              secretKey: '', // 不显示AWS Secret Key
+              albs: detailedConfig.awsConfig.albs && detailedConfig.awsConfig.albs.length > 0 
+                ? detailedConfig.awsConfig.albs 
+                : [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }]
+            } : {
+              region: '',
+              accessKey: '',
+              secretKey: '',
+              albs: [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }]
+            },
+            dockerRepositoryType: detailedConfig.dockerRepositoryType || 'standard',
+            dockerRepositoryUrl: detailedConfig.dockerRepositoryUrl || '',
+            dockerRepositoryUsername: detailedConfig.dockerRepositoryUsername || '',
+            dockerRepositoryPassword: detailedConfig.dockerRepositoryPassword || ''
+          };
+          
+          setFormData(newFormData);
         } catch (err) {
-      // 使用toast显示加载错误
-      setToast({
-        message: err.message,
-        type: 'error'
-      });
-      console.error(t('errors.loadingProjectFailed'), err);
-    } finally {
+          // 使用toast显示加载错误
+          setToast({
+            message: err.message || t('errors.loadingProjectFailed'),
+            type: 'error'
+          });
+          console.error(t('errors.loadingProjectFailed'), err);
+        } finally {
           setLoading(false);
         }
       };
@@ -381,21 +361,7 @@ const ProjectEdit = () => {
     try {
       setSubmitting(true);
       
-      const response = await fetch(
-        `/api/projects/edit/${projectName}/${envName}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        }
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || t('errors.updateFailed'));
-      }
+      await api.put(`/projects/edit/${projectName}/${envName}`, formData);
       
       // 显示成功的toast
       setToast({
@@ -409,7 +375,7 @@ const ProjectEdit = () => {
     } catch (err) {
       // 显示错误的toast
       setToast({
-        message: err.message,
+        message: err.message || t('errors.updateFailed'),
         type: 'error'
       });
     } finally {

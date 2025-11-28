@@ -1,9 +1,11 @@
 {
   "common": {
+    "logout": "Logout",
     "save": "Save",
     "saveChanges": "Save Changes",
     "cancel": "Cancel",
     "delete": "Delete",
+    "unauthorized": "Unauthorized Access",
     "remove": "Remove",
     "edit": "Edit",
     "create": "Create",
@@ -327,6 +329,16 @@
     "requiredContainerPort": "Container port is required",
     "error": "Error"
   },
+  "auth": {
+      "loginTitle": "Login to Light Engine",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "login": "Login",
+      "loggingIn": "Logging in...",
+      "loginFailed": "Login failed. Please check your credentials."
+    },
   "languageSwitcher": {
     "english": "English",
     "chinese": "中文"

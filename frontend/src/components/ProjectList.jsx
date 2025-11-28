@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { api } from '../api/apiService';
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
@@ -12,15 +13,11 @@ const ProjectList = () => {
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/projects/list');
-      if (!response.ok) {
-        throw new Error('Failed to fetch projects');
-      }
-      const data = await response.json();
-      setProjects(data.projects);
+      const response = await api.get('/projects/list');
+      setProjects(response.data.projects);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to fetch projects');
       console.error('Error fetching projects:', err);
     } finally {
       setLoading(false);

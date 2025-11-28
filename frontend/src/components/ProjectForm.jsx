@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { api } from '../api/apiService';
 
 const ProjectForm = () => {
   const navigate = useNavigate();
@@ -211,27 +212,26 @@ const ProjectForm = () => {
     if (!projectId) return;
     
     try {
-      const response = await fetch(`/api/projects/${projectId}`);
-      const data = await response.json();
+      setIsSubmitting(true);
+      setError(null);
+      const response = await api.get(`/projects/${projectId}`);
       
-      if (response.ok) {
-        // 确保albs数组存在且格式正确
-        const albs = data.awsConfig?.albs && Array.isArray(data.awsConfig.albs) 
-          ? data.awsConfig.albs 
-          : [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }];
-        
-        setFormData({
-          ...data,
-          awsConfig: {
-            ...data.awsConfig,
-            albs: albs
-          }
-        });
-      } else {
-        throw new Error(data.error || t('errors.loadProjectFailed'));
-      }
+      // 确保albs数组存在且格式正确
+      const albs = response.data.awsConfig?.albs && Array.isArray(response.data.awsConfig.albs) 
+        ? response.data.awsConfig.albs 
+        : [{ name: '', certificateARNs: [''], subnets: { ids: [''] } }];
+      
+      setFormData({
+        ...response.data,
+        awsConfig: {
+          ...response.data.awsConfig,
+          albs: albs
+        }
+      });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || t('errors.loadProjectFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -256,23 +256,15 @@ const ProjectForm = () => {
       setIsSubmitting(true);
       setError(null);
       
-      const endpoint = projectId ? `/api/projects/${projectId}/edit` : '/api/projects/create';
-      const method = projectId ? 'PUT' : 'POST';
+      const endpoint = projectId ? `/projects/${projectId}/edit` : '/projects/create';
+      const method = projectId ? 'put' : 'post';
       const successMessage = projectId 
         ? `${t('projectForm.updateSuccess')}：${formData.projectName}`
         : `${t('projectForm.createSuccess')}：${formData.projectName}`;
       
-      const response = await fetch(endpoint, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
+      const response = await api[method](endpoint, formData);
       
-      const result = await response.json()
-      
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
           setSuccess(successMessage);
           setTimeout(() => {
             navigate('/');
