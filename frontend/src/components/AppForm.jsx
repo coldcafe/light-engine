@@ -33,7 +33,7 @@ const AppForm = () => {
     },
     ports: [{ name: 'http', port: 1337 }],
     replicas: 1,
-    useImagePullSecret: false,
+    useImagePullSecret: true,
     ingress: {
       type: 'default', // default,aws_alb
       host: '',
@@ -214,6 +214,11 @@ const AppForm = () => {
   // 处理ingress开关
   const handleIngressToggle = () => {
     setFormData(prev => ({ ...prev, hasIngress: !prev.hasIngress }));
+  }
+
+  // 处理useImagePullSecret开关
+  const handleImagePullSecretToggle = () => {
+    setFormData(prev => ({ ...prev, useImagePullSecret: !prev.useImagePullSecret }));
   }
 
   // 验证表单
@@ -402,6 +407,22 @@ const AppForm = () => {
               className={errors.replicas ? 'error-field' : ''}
             />
             {errors.replicas && <div className="error">{errors.replicas}</div>}
+          </div>
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <div className="toggle-switch">
+                <input
+                  type="checkbox"
+                  id="imagePullSecretToggle"
+                  checked={formData.useImagePullSecret}
+                  onChange={handleImagePullSecretToggle}
+                />
+                <span className="toggle-slider"></span>
+              </div>
+              <span style={{ fontSize: '1.1rem', fontWeight: '500' }}>
+                {t('appForm.imagePullSecret')}
+              </span>
+            </label>
           </div>
         </div>
 
