@@ -142,11 +142,14 @@ const listApps = (req, res) => {
     // 获取apps数组（如果不存在则返回空数组）
     const apps =  [];
 
-    for (const appKey of Object.keys(projectConfig.app)) {
-      const app = projectConfig.app[appKey];
-      app.appName = appKey;
-      apps.push(app);
+    if (projectConfig.app) {
+      for (const appKey of Object.keys(projectConfig.app)) {
+        const app = projectConfig.app[appKey];
+        app.appName = appKey;
+        apps.push(app);
+      }
     }
+    
     
     // 格式化响应数据
     const formattedApps = apps.map(app => ({

@@ -224,13 +224,13 @@ const AppForm = () => {
       newErrors.appName = t('errors.requiredAppName');
     }
 
-    if (!formData.gitUrl.trim()) {
-      newErrors.gitUrl = t('errors.requiredGitUrl');
-    }
+    // if (!formData.gitUrl.trim()) {
+    //   newErrors.gitUrl = t('errors.requiredGitUrl');
+    // }
 
-    if (!formData.gitBranch.trim()) {
-      newErrors.gitBranch = t('errors.requiredGitBranch');
-    }
+    // if (!formData.gitBranch.trim()) {
+    //   newErrors.gitBranch = t('errors.requiredGitBranch');
+    // }
 
     // 验证资源配置
     if (!formData.resources.requests.cpu.trim()) {
