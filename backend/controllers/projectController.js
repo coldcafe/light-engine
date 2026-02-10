@@ -23,6 +23,8 @@ const createProject = (req, res) => {
     fs.mkdirSync(dirPath, { recursive: true });
 
     const config = {
+      name: projectName,
+      env: envName,
       k8sType  // 保存k8sType到配置文件
     };
 

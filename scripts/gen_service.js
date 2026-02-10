@@ -5,6 +5,9 @@ const YAML = require('yaml');
 exports.genService = function genService(dirpath, config, appName) {
   const appConfig = config.app[appName];
   const namespace = config.namespace;
+  if (!appConfig.ports || appConfig.ports.length === 0) {
+    return;
+  }
   const service = {
     "apiVersion": "v1",
     "kind": "Service",
@@ -16,19 +19,20 @@ exports.genService = function genService(dirpath, config, appName) {
       "namespace": namespace
     },
     "spec": {
-      "ports": appConfig.ports.map(port => (
+      "ports": appConfig.ports ?appConfig.ports.map(port => (
         {
           "name": port.name,
           "port": port.port,
           "targetPort": port.targetPort || port.port
         }
-      )),
+      )) : [],
       "selector": {
         "name": appName
       },
       "type": "ClusterIP"
     }
   }
+  
   if (appConfig.aliyun && appConfig.aliyun.lbCertId) {
     service.spec.type = "LoadBalancer";
     service.spec.ports = [
@@ -54,5 +58,5 @@ exports.genService = function genService(dirpath, config, appName) {
       service.metadata.annotations["service.beta.kubernetes.io/alibaba-cloud-loadbalancer-force-override-listeners"] = "true"
     }
   }
-  fs.writeFileSync(path.join(dirpath, 'ymls', appName + "-service.yml"), YAML.stringify(service))
+  fs.writeFileSync(path.join(dirpath, 'ymls', appName, "service.yml"), YAML.stringify(service))
 }

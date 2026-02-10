@@ -23,17 +23,17 @@ exports.genDeployment = function genDeployment(dirpath, config, appName, image) 
     "metadata": {
       "labels": { "app": appName, "name": appName }
     },
-    "spec": getSpec(dirpath, appName, appConfig, image)
+    "spec": getSpec(dirpath, appName, config, appConfig, image)
   };
-  if (!fs.existsSync(path.join(dirpath, 'ymls'))) {
-    fs.mkdirSync(path.join(dirpath, 'ymls'), { recursive: true });
+  if (!fs.existsSync(path.join(dirpath, 'ymls', appName))) {
+    fs.mkdirSync(path.join(dirpath, 'ymls', appName), { recursive: true });
   }
-  fs.writeFileSync(path.join(dirpath, 'ymls', appName + "-deployment.yml"), YAML.stringify(deployment))
-}
+  fs.writeFileSync(path.join(dirpath, 'ymls', appName, "deployment.yml"), YAML.stringify(deployment))
+} 
 
-function getSpec(dirpath, appName, appConfig, image) {
+function getSpec(dirpath, appName, config, appConfig, image) {
   const sepc = {
-    containers: getContainers(dirpath, appName, appConfig, image)
+    containers: getContainers(dirpath, appName, config, appConfig, image)
   }
   if (appConfig.imagePullSecret) {
     sepc.imagePullSecrets = [
@@ -44,47 +44,54 @@ function getSpec(dirpath, appName, appConfig, image) {
   }
   return sepc;
 }
-function getContainers(dirpath, appName, appConfig, image) {
-  const envStr = fs.readFileSync(path.join(dirpath, 'envs',appConfig.envSecret + '.env'), 'utf-8')
-  const envKeys = env2secret.getEnvKeys(envStr)
+function getContainers(dirpath, appName, config, appConfig, image) {
+  
   const envs = [];
-
-  if (appConfig.aliyun) {
-    const {alicloudSlsStore, alicloudSlsProject} = appConfig.aliyun
-    if (alicloudSlsStore && alicloudSlsProject) {
-      envs.push(
-        { name: "aliyun_logs_" + projectName + "-" + appName + "-" + env, value: "stdout" },
-        { name: "aliyun_logs_" + projectName + "-" + appName + "-" + env + "_logstore", value: alicloudSlsStore },
-        { name: "aliyun_logs_" + projectName + "-" + appName + "-" + env + "_project", value: alicloudSlsProject },
-      )
+  if (appConfig.envs) {
+    for (let key of Object.keys(appConfig.envs)) {
+      envs.push({ name: key, value: appConfig.envs[key] })
     }
   }
-
-  for (let key of envKeys) {
-    if (envs.findIndex(i => i.name == key) == -1) {
-      envs.push({
-        name: key,
-        valueFrom: {
-          secretKeyRef: { name: appConfig.envSecret, key: key }
-        }
-      })
-    }
+  if (appConfig.alicloudSlsEnabled && config.aliyun && config.aliyun.alicloudSlsProject) {
+    envs.push(
+      { name: "aliyun_logs_" + config.name + "-" + appName + "-" + config.env, value: "stdout" },
+      { name: "aliyun_logs_" + config.name + "-" + appName + "-" + config.env + "_logstore", value: appName },
+      { name: "aliyun_logs_" + config.name + "-" + appName + "-" + config.env + "_project", value: config.aliyun.alicloudSlsProject },
+    )
   }
-  return [
-    {
-      "name": appName,
-      "image": image,
-      "imagePullPolicy": "Always",
-      "ports": appConfig.ports.map(port => ({ containerPort: port.port })),
-      "resources": appConfig.resources,
-      "lifecycle": {
-        "preStop": {
-          "exec": {
-            "command": ["sleep", "30"]
+
+  if (appConfig.envSecret) {
+    const envStr = fs.readFileSync(path.join(dirpath, 'envs',appConfig.envSecret + '.env'), 'utf-8')
+    const envKeys = env2secret.getEnvKeys(envStr)
+    for (let key of envKeys) {
+      if (envs.findIndex(i => i.name == key) == -1) {
+        envs.push({
+          name: key,
+          valueFrom: {
+            secretKeyRef: { name: appConfig.envSecret, key: key }
           }
-        }
-      },
-      "env": envs
+        })
+      }
     }
-  ]
+  }
+  const container = {
+    "name": appName,
+    "image": image,
+    "imagePullPolicy": "Always",
+    "resources": appConfig.resources,
+    "lifecycle": {
+      "preStop": {
+        "exec": {
+          "command": ["sleep", "30"]
+        }
+      }
+    }
+  }
+  if (envs.length > 0) {
+    container.env = envs
+  }
+  if (appConfig.ports && appConfig.ports.length > 0) {
+    container.ports = appConfig.ports.map(port => ({ containerPort: port.port }))
+  }
+  return [container]
 }

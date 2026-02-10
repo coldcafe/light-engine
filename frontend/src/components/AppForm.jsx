@@ -77,7 +77,7 @@ const AppForm = () => {
       setFormData({
         appName: data.appName,
         gitUrl: data.gitUrl || '',
-        gitBranch: data.gitBranch || 'main',
+        gitBranch: data.gitBranch || '',
         resources: data.resources || formData.resources,
         ports: data.ports || formData.ports,
         replicas: data.replicas || 1,
@@ -322,7 +322,7 @@ const AppForm = () => {
 
       const result = response.data;
 
-      if (response.ok) {
+      if (response.status === 200) {
         setSuccess(isEditMode ? t('appForm.updateSuccess') : t('appForm.createSuccess'));
         setTimeout(() => {
           navigate(`/apps/${projectName}/${envName}`);
@@ -372,7 +372,7 @@ const AppForm = () => {
             />
             {errors.appName && <div className="error">{errors.appName}</div>}
           </div>
-          <div className="form-group">
+          {/* <div className="form-group">
             <label>{t('appForm.gitUrl')}</label>
             <input
               type="text"
@@ -395,7 +395,7 @@ const AppForm = () => {
               className={errors.gitBranch ? 'error-field' : ''}
             />
             {errors.gitBranch && <div className="error">{errors.gitBranch}</div>}
-          </div>
+          </div> */}
           <div className="form-group">
             <label>{t('appForm.replicas')}</label>
             <input

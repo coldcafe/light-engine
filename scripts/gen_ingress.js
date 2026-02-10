@@ -53,7 +53,7 @@ exports.genIngress = function genIngress(dirpath, config, appName) {
     genAwsALbIngressClass(dirpath, config)
     ingress.spec["ingressClassName"] = appConfig.ingress.ingressClassName;
   }
-  fs.writeFileSync(path.join(dirpath, 'ymls', appName + "-ingress.yml"), YAML.stringify(ingress))
+  fs.writeFileSync(path.join(dirpath, 'ymls', appName, "ingress.yml"), YAML.stringify(ingress))
 }
 
 function genTlsSecret(dirpath, config, appName) {
@@ -74,7 +74,7 @@ function genTlsSecret(dirpath, config, appName) {
       "tls.key": key
     }
   }
-  fs.writeFileSync(path.join(dirpath, 'ymls', appName + "-tls.yml"), YAML.stringify(tlsSecret))
+  fs.writeFileSync(path.join(dirpath, 'ymls', appName, "tls.yml"), YAML.stringify(tlsSecret))
 }
 
 function genAwsALbIngressClass(dirpath, config) {
