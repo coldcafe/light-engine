@@ -10,6 +10,44 @@ exports.genIngress = function genIngress(dirpath, config, appName) {
   }
   const host = appConfig.ingress.host;
   const servicePort = appConfig.ingress.service_port;
+
+  const rules = typeof host == 'string' ? [{
+    "host": host,
+    "http": {
+      "paths": [
+        {
+          "path": "/",
+          "pathType": "Prefix",
+          "backend": {
+            "service": {
+              "name": appName,
+              "port": {
+                "number": servicePort
+              }
+            }
+          }
+        }
+      ]
+    }
+  }] : host.map(h => ({
+    "host": h,
+    "http": {
+      "paths": [
+        {
+          "path": "/",
+          "pathType": "Prefix",
+          "backend": {
+            "service": {
+              "name": appName,
+              "port": {
+                "number": servicePort
+              }
+            }
+          }
+        }
+      ]
+    }
+  }));
   const ingress = {
     "apiVersion": "networking.k8s.io/v1",
     "kind": "Ingress",
@@ -18,34 +56,14 @@ exports.genIngress = function genIngress(dirpath, config, appName) {
       "namespace": namespace
     },
     "spec": {
-      "rules": [
-        {
-          "host": host,
-          "http": {
-            "paths": [
-              {
-                "path": "/",
-                "pathType": "Prefix",
-                "backend": {
-                  "service": {
-                    "name": appName,
-                    "port": {
-                      "number": servicePort
-                    }
-                  }
-                }
-              }
-            ]
-          }
-        }
-      ]
+      "rules": rules
     }
   };
   if (appConfig.ingress.type == 'default' && appConfig.ingress.tls) {
     genTlsSecret(dirpath, config, appName);
     ingress.spec["tls"] = [
       {
-        "hosts": [host],
+        "hosts": typeof host == 'string' ? [host] : host,
         "secretName": appName + "-tls"
       }
     ];
