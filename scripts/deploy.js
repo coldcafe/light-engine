@@ -21,6 +21,7 @@ exports.deploy = function deploy(projectName, env, appName, imageTag, sourceCode
             const output = execSync(`cd ${sourceCodePath}; sh build.sh`);
             console.log(output && output.toString());
         }
+        genImagePullSecret(dirpath, config, appName);
         sendTextMsg(`Start building ${projectName} ${env} ${appName} ${imageTag} (${new Date().toLocaleString()})`, feishuRobotId, feishuSecret);
         const output = execSync(`docker build -t ${image} ${sourceCodePath}`);
         console.log(output && output.toString());
@@ -34,7 +35,6 @@ exports.deploy = function deploy(projectName, env, appName, imageTag, sourceCode
         genDeployment(dirpath, config, appName, image);
         //genService(dirpath, config, appName);
         genEnvSecret(dirpath, config, appName);
-        genImagePullSecret(dirpath, config, appName);
         genIngress(dirpath, config, appName);
 
         const output2 = execSync(`kubectl --kubeconfig="${dirpath}/kube_conf.yml" apply -f ${dirpath}/ymls/`);
